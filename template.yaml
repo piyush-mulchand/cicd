@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A sample SAM template for deploying Lambda functions.
+
+Resources:
+# Details about the myDateTimeFunction Lambda function
+  myDateTimeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.6
+# Instructs your myDateTimeFunction is published to an alias named "live".
+      AutoPublishAlias: prod
+# Grants this function permission to call lambda:InvokeFunction
+      CodeUri : ./lambda
+      Handler: myDateTimeFunction.handler
+      Description : 'Lambda code for CD Demo'
+      MemorySize : 128
+      Timeout : 120
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+              - "lambda:InvokeFunction"
+            Resource: '*'
+      FunctionName : 'myDateTimeFunction_prod'
+      DeploymentPreference:
+# Specifies the deployment configuration
+          Type: Linear10PercentEvery1Minute
+# Specifies Lambda functions for deployment lifecycle hooks
+          Hooks:
+            PreTraffic: !Ref PreTrafficHook
+            PostTraffic: !Ref PostTrafficHook
+
+# Specifies the BeforeAllowTraffic lifecycle hook Lambda function
+  PreTrafficHook:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: beforeAllowTraffic.handler
+      Policies:
+        - Version: "2012-10-17"
+# Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
+          Statement:
+          - Effect: "Allow"
+            Action:
+              - "codedeploy:PutLifecycleEventHookExecutionStatus"
+            Resource:
+              !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
+        - Version: "2012-10-17"
+# Grants this function permission to call lambda:InvokeFunction
+          Statement:
+          - Effect: "Allow"
+            Action:
+              - "lambda:InvokeFunction"
+            Resource: !Ref myDateTimeFunction.Version
+      Runtime: python3.6
+# Specifies the name of the Lambda hook function
+      FunctionName: 'CodeDeployHook_beforeAllowTraffic'
+      Description : 'pre traffic hook check'
+      CodeUri : ./pre_traffic
+      Timeout : 120
+      MemorySize : 128
+      DeploymentPreference:
+        Enabled: false
+      Environment:
+        Variables:
+          NewVersion: !Ref myDateTimeFunction.Version
+
+# Specifies the AfterAllowTraffic lifecycle hook Lambda function
+  PostTrafficHook:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: afterAllowTraffic.handler
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+# Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
+          - Effect: "Allow"
+            Action:
+              - "codedeploy:PutLifecycleEventHookExecutionStatus"
+            Resource:
+              !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
+        - Version: "2012-10-17"
+          Statement:
+# Grants this function permission to call lambda:InvokeFunction
+          - Effect: "Allow"
+            Action:
+              - "lambda:InvokeFunction"
+            Resource: !Ref myDateTimeFunction.Version
+      Runtime: python3.6
+# Specifies the name of the Lambda hook function
+      FunctionName: 'CodeDeployHook_afterAllowTraffic'
+      Description : 'Post traffic hook lambda'
+      CodeUri: ./post_traffic
+      MemorySize : 128
+      Timeout : 120
+      DeploymentPreference:
+        Enabled: false
+      Environment:
+        Variables:
+          NewVersion: !Ref myDateTimeFunction.Version
