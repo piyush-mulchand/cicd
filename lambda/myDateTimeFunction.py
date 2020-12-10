@@ -8,4 +8,4 @@ def handler(event,context):
     }
 
 def another_function(event):
-    return 'success'
+    return 'success!'
