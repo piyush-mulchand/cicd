@@ -11,8 +11,9 @@ def cd_response(deploymentId,lifecycleEventHookExecutionId,status):
             )
 
 def handler(event,context):
-    deploymentId = event.deploymentId
-    lifecycleEventHookExecutionId = event.lifecycleEventHookExecutionId
+    print(event)
+    deploymentId = event['DeploymentId']
+    lifecycleEventHookExecutionId = event['LifecycleEventHookExecutionId']
     lambda_respone = lambda_func.invoke(
                            FunctionName = os.environ['NewVersion'],
                            InvocationType='Event')
