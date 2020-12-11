@@ -19,7 +19,7 @@ def handler(event,context):
                            FunctionName = os.environ['NewVersion'],
                            InvocationType='Event')
     if lambda_response:
-        if lambda_response['message'] is 'success':
+        if lambda_response['message'] is 'success!':
             response = cd_response(deploymentId,lifecycleEventHookExecutionId,'Succeeeded')
             print(response,' TEST PASS')
         else:
