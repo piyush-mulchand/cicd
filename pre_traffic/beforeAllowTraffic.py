@@ -1,5 +1,5 @@
 import boto3
-
+import os
 code_deploy = boto3.client('codedeploy')
 lambda_func = boto3.client('lambda')
 
@@ -14,11 +14,11 @@ def handler(event,context):
     print(event)
     deploymentId = event['DeploymentId']
     lifecycleEventHookExecutionId = event['LifecycleEventHookExecutionId']
-    lambda_respone = lambda_func.invoke(
+    lambda_response = lambda_func.invoke(
                            FunctionName = os.environ['NewVersion'],
                            InvocationType='Event')
     if lambda_response:
-        if lambda_response['message'] is 'success!':
+        if lambda_response['message'] is 'success':
             response = cd_response(deploymentId,lifecycleEventHookExecutionId,'Succeeeded')
             print(response,' TEST PASS')
         else:
